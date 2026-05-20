@@ -1,0 +1,33 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *)); /* ESTA ES LA LLAVE MAESTRA DEL MODO OSCURO EN V4 */
+
+/* Desplazamiento suave en toda la página */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Clases para la animación de aparición al hacer scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Asegura que el color de fondo cambie suavemente entre modo claro y oscuro */
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100;
+  }
+}
+
+/* Regla personalizada para el contenedor de tecnologías */
+.tecnologias-container {
+  display: flex;
+  flex-wrap: wrap; 
+  gap: 0.5rem; 
+}
