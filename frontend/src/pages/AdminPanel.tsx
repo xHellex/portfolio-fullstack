@@ -1,45 +1,53 @@
 import { useState, useEffect } from 'react';
-import type { Tecnologia, Proyecto } from '../types'; // <-- Añade Proyecto
-import { api } from '../services/api'; // <-- Importa la API
+import type { Tecnologia, Proyecto } from '../types'; 
+import { api } from '../services/api'; 
 
 export default function AdminPanel() {
-  // Estado para controlar qué pestaña está activa
   const [activeTab, setActiveTab] = useState('perfil');
   const [mensaje, setMensaje] = useState('');
 
-  // Estados para los formularios
+  // Estados de Formularios
   const [perfilData, setPerfilData] = useState({ resumen: '', disponibilidad: false });
   const [expData, setExpData] = useState({ empresa: '', cargo: '', fechaInicio: '', fechaFin: '', descripcion: '', actual: false });
   const [estData, setEstData] = useState({ institucion: '', titulo: '', fechaInicio: '', fechaFin: '', descripcion: '', actual: false });
   const [proyData, setProyData] = useState({ titulo: '', descripcion: '', urlDemo: '', urlRepo: '' });
-  
-  const [tecnologiasDisponibles, setTecnologiasDisponibles] = useState<Tecnologia[]>([]);
-  const [tecnologiasSeleccionadas, setTecnologiasSeleccionadas] = useState<number[]>([]);
+  const [techData, setTechData] = useState({ nombre: '', categoria: 'Frontend' });
+
+  // Estados de Listas/Catálogos
   const [proyectosList, setProyectosList] = useState<Proyecto[]>([]);
+  const [catalogoTecnologias, setCatalogoTecnologias] = useState<Tecnologia[]>([]);
+  const [tecnologiasSeleccionadas, setTecnologiasSeleccionadas] = useState<number[]>([]);
 
   useEffect(() => {
-    // VERIFICACIÓN DE SEGURIDAD
+    // 1. Verificación de Seguridad
     const token = localStorage.getItem('token');
     if (!token) {
       window.location.href = '/login';
-      return; // Detenemos la ejecución si no hay token
+      return; 
     }
-    api.getTecnologias().then(data => setTecnologiasDisponibles(data)).catch(console.error);
-    api.getProyectos().then(data => setProyectosList(data)).catch(console.error);
-  }, []);
 
-  const toggleTecnologia = (id: number) => {
-    setTecnologiasSeleccionadas(prev => 
-      prev.includes(id) ? prev.filter(techId => techId !== id) : [...prev, id]
-    );
-  };
+    // 2. Cargar datos iniciales
+    api.getProyectos().then(data => setProyectosList(data)).catch(console.error);
+    
+    // Cargar Catálogo de Tecnologías
+    fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/tecnologias')
+      .then(res => res.json())
+      .then(data => setCatalogoTecnologias(data))
+      .catch(console.error);
+  }, []);
 
   const showMensaje = (texto: string) => {
     setMensaje(texto);
-    setTimeout(() => setMensaje(''), 4000); // El mensaje desaparece solo a los 4 seg
+    setTimeout(() => setMensaje(''), 4000); 
   };
 
-  // HANDLERS PARA GUARDAR DATOS
+  const handleCheckboxChange = (id: number) => {
+    setTecnologiasSeleccionadas(prev => 
+      prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
+    );
+  };
+
+  // --- HANDLERS ---
   const handleSavePerfil = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -48,11 +56,9 @@ export default function AdminPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(perfilData),
       });
-      if (response.ok) {
-        showMensaje('¡Perfil actualizado con éxito!');
-      }
+      if (response.ok) showMensaje('¡Perfil actualizado con éxito!');
     } catch (error) {
-      console.error("Error al guardar perfil:", error);
+      console.error(error);
       showMensaje('Error al guardar el perfil.');
     }
   };
@@ -70,7 +76,7 @@ export default function AdminPanel() {
         setExpData({ empresa: '', cargo: '', fechaInicio: '', fechaFin: '', descripcion: '', actual: false });
       }
     } catch (error) {
-      console.error("Error al guardar experiencia:", error); // <-- Agregamos esto
+      console.error(error);
       showMensaje('Error al guardar la experiencia.');
     }
   };
@@ -88,41 +94,67 @@ export default function AdminPanel() {
         setEstData({ institucion: '', titulo: '', fechaInicio: '', fechaFin: '', descripcion: '', actual: false });
       }
     } catch (error) {
-      console.error("Error al guardar estudio:", error); // <-- Agregamos esto
+      console.error(error);
       showMensaje('Error al guardar el estudio.');
+    }
+  };
+
+  const handleSaveTecnologia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/tecnologias', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(techData)
+      });
+      if (response.ok) {
+        const nuevaTech = await response.json();
+        setCatalogoTecnologias([...catalogoTecnologias, nuevaTech]);
+        setTechData({ nombre: '', categoria: 'Frontend' });
+        showMensaje("¡Tecnología añadida con éxito!");
+      }
+    } catch (error) {
+      console.error("Error guardando tecnología:", error);
     }
   };
 
   const handleSaveProyecto = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Armamos el objeto tal cual lo espera el @ManyToMany de Java
+    const payloadProyecto = {
+      ...proyData,
+      activo: true,
+      fechaCreacion: new Date().toISOString().split('T')[0],
+      tecnologias: tecnologiasSeleccionadas.map(id => ({ id })) 
+    };
+
     try {
       const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/proyectos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...proyData, activo: true, fechaCreacion: new Date().toISOString().split('T')[0] }),
+        body: JSON.stringify(payloadProyecto),
       });
       if (response.ok) {
-        const pCreado = await response.json();
-        for (const techId of tecnologiasSeleccionadas) {
-          await fetch(`https://portfolio-fullstack-x1xm.onrender.com/api/v1/proyectos/${pCreado.id}/tecnologias/${techId}`, { method: 'POST' });
-        }
         showMensaje('¡Proyecto publicado!');
         setProyData({ titulo: '', descripcion: '', urlDemo: '', urlRepo: '' });
         setTecnologiasSeleccionadas([]);
       }
     } catch (error) {
-      console.error("Error al guardar proyecto:", error);
+      console.error(error);
       showMensaje('Error al guardar proyecto.');
     }
   };
 
   const handleDeleteProyecto = async (id: number) => {
     if (!window.confirm("¿Estás seguro de eliminar este proyecto permanentemente?")) return;
-    
     try {
       await fetch(`https://portfolio-fullstack-x1xm.onrender.com/api/v1/proyectos/${id}`, { method: 'DELETE' });
       showMensaje('Proyecto eliminado.');
-      // Actualizamos la lista local para que desaparezca de inmediato sin recargar la página
       setProyectosList(proyectosList.filter(p => p.id !== id));
     } catch (error) {
       console.error(error);
@@ -131,11 +163,11 @@ export default function AdminPanel() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token'); // Destruye la llave VIP
-    window.location.href = '/login';  // Te expulsa al login
+    localStorage.removeItem('token'); 
+    window.location.href = '/login';  
   };
 
-  // Clases CSS reutilizables para los inputs
+  // Clases CSS
   const inputClass = "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none";
   const labelClass = "block text-sm font-medium text-gray-700 mb-1";
 
@@ -144,25 +176,18 @@ export default function AdminPanel() {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Centro de Mando (CMS)</h1>
-          
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100 shadow-sm"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
+          <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100 shadow-sm">
             Cerrar Sesión
           </button>
         </div>
 
-        {/* NAVEGACIÓN DE PESTAÑAS */}
-        <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm mb-6 border border-gray-100">
-          {['perfil', 'experiencia', 'estudios', 'proyectos'].map((tab) => (
+        {/* NAVEGACIÓN DE PESTAÑAS (Agregada la pestaña de Tecnologías) */}
+        <div className="flex space-x-1 bg-white p-1 rounded-xl shadow-sm mb-6 border border-gray-100 overflow-x-auto">
+          {['perfil', 'experiencia', 'estudios', 'tecnologias', 'proyectos'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2.5 text-sm font-medium rounded-lg capitalize transition-colors ${
+              className={`flex-1 min-w-[100px] py-2.5 text-sm font-medium rounded-lg capitalize transition-colors ${
                 activeTab === tab ? 'bg-indigo-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
@@ -171,22 +196,18 @@ export default function AdminPanel() {
           ))}
         </div>
 
-        {/* NOTIFICACIÓN FLOTANTE */}
         {mensaje && (
           <div className="mb-6 p-4 rounded-xl bg-green-50 text-green-700 border border-green-200 flex items-center gap-3 text-sm font-medium animate-pulse">
             {mensaje}
           </div>
         )}
 
-        {/* CONTENEDOR DE FORMULARIOS */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
           
           {/* TAB: PERFIL */}
-          {activeTab === 'perfil' && (
+          {activeTab === 'perfil' && ( /* ... Tu código del perfil ... */
             <form onSubmit={handleSavePerfil} className="space-y-6">
               <h2 className="text-xl font-bold text-gray-800 border-b pb-2">Datos del Perfil</h2>
-              
-              {/* INTERRUPTOR ON/OFF (TOGGLE) */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <div>
                   <h3 className="font-semibold text-gray-900">Disponibilidad Inmediata</h3>
@@ -197,9 +218,8 @@ export default function AdminPanel() {
                   <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
                 </label>
               </div>
-
               <div>
-                <label className={labelClass}>Resumen / Sobre Mí (Aparecerá en el inicio y en el PDF)</label>
+                <label className={labelClass}>Resumen / Sobre Mí</label>
                 <textarea required rows={5} className={inputClass} value={perfilData.resumen} onChange={(e) => setPerfilData({...perfilData, resumen: e.target.value})} placeholder="Desarrollador Full Stack apasionado por..." />
               </div>
               <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700">Guardar Perfil</button>
@@ -207,17 +227,14 @@ export default function AdminPanel() {
           )}
 
           {/* TAB: EXPERIENCIA */}
-          {activeTab === 'experiencia' && (
+          {activeTab === 'experiencia' && ( /* ... Tu código de experiencia ... */
             <form onSubmit={handleSaveExperiencia} className="space-y-4">
               <h2 className="text-xl font-bold text-gray-800 border-b pb-2">Añadir Experiencia Laboral</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className={labelClass}>Empresa</label><input required type="text" className={inputClass} value={expData.empresa} onChange={(e) => setExpData({...expData, empresa: e.target.value})} /></div>
                 <div><label className={labelClass}>Cargo</label><input required type="text" className={inputClass} value={expData.cargo} onChange={(e) => setExpData({...expData, cargo: e.target.value})} /></div>
-                <div><label className={labelClass}>Fecha Inicio (YYYY-MM-DD)</label><input required type="date" className={inputClass} value={expData.fechaInicio} onChange={(e) => setExpData({...expData, fechaInicio: e.target.value})} /></div>
-                <div>
-                  <label className={labelClass}>Fecha Fin</label>
-                  <input type="date" className={inputClass} value={expData.fechaFin} onChange={(e) => setExpData({...expData, fechaFin: e.target.value})} disabled={expData.actual} />
-                </div>
+                <div><label className={labelClass}>Fecha Inicio</label><input required type="date" className={inputClass} value={expData.fechaInicio} onChange={(e) => setExpData({...expData, fechaInicio: e.target.value})} /></div>
+                <div><label className={labelClass}>Fecha Fin</label><input type="date" className={inputClass} value={expData.fechaFin} onChange={(e) => setExpData({...expData, fechaFin: e.target.value})} disabled={expData.actual} /></div>
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <input type="checkbox" id="actualExp" checked={expData.actual} onChange={(e) => setExpData({...expData, actual: e.target.checked, fechaFin: ''})} className="w-4 h-4 text-indigo-600" />
@@ -229,7 +246,7 @@ export default function AdminPanel() {
           )}
 
           {/* TAB: ESTUDIOS */}
-          {activeTab === 'estudios' && (
+          {activeTab === 'estudios' && ( /* ... Tu código de estudios ... */
             <form onSubmit={handleSaveEstudio} className="space-y-4">
               <h2 className="text-xl font-bold text-gray-800 border-b pb-2">Añadir Educación</h2>
               <div className="grid grid-cols-2 gap-4">
@@ -247,11 +264,45 @@ export default function AdminPanel() {
             </form>
           )}
 
+          {/* TAB: TECNOLOGÍAS */}
+          {activeTab === 'tecnologias' && (
+            <div className="space-y-8">
+              <form onSubmit={handleSaveTecnologia} className="space-y-4">
+                <h2 className="text-xl font-bold text-gray-800 border-b pb-2">Añadir Tecnología al Catálogo</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>Nombre de la Tecnología</label>
+                    <input required type="text" className={inputClass} placeholder="Ej: React, Spring Boot..." value={techData.nombre} onChange={(e) => setTechData({...techData, nombre: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Categoría</label>
+                    <select className={inputClass} value={techData.categoria} onChange={(e) => setTechData({...techData, categoria: e.target.value})}>
+                      <option value="Frontend">Frontend</option>
+                      <option value="Backend">Backend</option>
+                      <option value="Base de Datos">Base de Datos</option>
+                      <option value="DevOps">DevOps / Cloud</option>
+                      <option value="Herramientas">Herramientas / CMS</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700">Guardar Tecnología</button>
+              </form>
+
+              <div className="mt-8">
+                <h3 className="font-bold text-gray-700 mb-4">Tecnologías en Base de Datos:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {catalogoTecnologias.map(tech => (
+                    <span key={tech.id} className="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">{tech.nombre}</span>
+                  ))}
+                  {catalogoTecnologias.length === 0 && <span className="text-gray-500 text-sm">Aún no has creado tecnologías.</span>}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* TAB: PROYECTOS */}
           {activeTab === 'proyectos' && (
              <div className="space-y-8">
-               
-               {/* FORMULARIO DE PROYECTOS COMPLETO */}
                <form onSubmit={handleSaveProyecto} className="space-y-4">
                  <h2 className="text-xl font-bold text-gray-800 border-b pb-2">Añadir Proyecto</h2>
                  <div><label className={labelClass}>Título</label><input required type="text" className={inputClass} value={proyData.titulo} onChange={(e) => setProyData({...proyData, titulo: e.target.value})} /></div>
@@ -261,22 +312,29 @@ export default function AdminPanel() {
                    <div><label className={labelClass}>URL Repo</label><input type="url" className={inputClass} value={proyData.urlRepo} onChange={(e) => setProyData({...proyData, urlRepo: e.target.value})} /></div>
                  </div>
                  
-                 {/* Selector de Tecnologías (Esto resuelve el error de variables sin usar) */}
-                 <div className="pt-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tecnologías utilizadas</label>
-                    <div className="flex flex-wrap gap-2">
-                      {tecnologiasDisponibles.map(tech => (
-                        <button key={tech.id} type="button" onClick={() => toggleTecnologia(tech.id)}
-                          className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${tecnologiasSeleccionadas.includes(tech.id) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-600'}`}>
-                          {tech.nombre}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                 <button type="submit" className="w-full mt-4 bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700">Guardar Proyecto</button>
+                 {/* CHECKBOXES DE TECNOLOGÍAS */}
+                 <div className="col-span-2 mt-4">
+                   <label className="block text-sm font-medium text-gray-700 mb-2">Tecnologías Utilizadas (Selecciona las que apliquen)</label>
+                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                     {catalogoTecnologias.map((tech) => (
+                       <label key={tech.id} className="flex items-center space-x-2 cursor-pointer">
+                         <input
+                           type="checkbox"
+                           value={tech.id}
+                           checked={tecnologiasSeleccionadas.includes(tech.id!)}
+                           onChange={() => handleCheckboxChange(tech.id!)}
+                           className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                         />
+                         <span className="text-sm text-gray-700">{tech.nombre}</span>
+                       </label>
+                     ))}
+                     {catalogoTecnologias.length === 0 && <span className="text-xs text-red-500 col-span-4">Primero debes crear tecnologías en la pestaña anterior.</span>}
+                   </div>
+                 </div>
+                 <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700">Publicar Proyecto</button>
                </form>
 
-               {/* LISTA Y BOTÓN ELIMINAR */}
+               {/* GESTIÓN DE PROYECTOS PUBLICADOS */}
                <div className="border-t border-gray-200 pt-8 mt-8">
                  <h3 className="text-lg font-bold text-gray-900 mb-4">Gestionar Proyectos Publicados</h3>
                  <ul className="divide-y divide-gray-100 bg-gray-50 rounded-xl border border-gray-200">
@@ -284,13 +342,11 @@ export default function AdminPanel() {
                      <li key={p.id} className="p-4 flex justify-between items-center hover:bg-gray-100 transition-colors">
                        <div>
                          <span className="font-semibold text-gray-800 block">{p.titulo}</span>
-                         <span className="text-xs text-gray-500">{p.tecnologias.length} tecnologías vinculadas</span>
                        </div>
                        <button 
-                         onClick={() => handleDeleteProyecto(p.id)} 
+                         onClick={() => p.id && handleDeleteProyecto(p.id)} 
                          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                        >
-                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                          Eliminar
                        </button>
                      </li>

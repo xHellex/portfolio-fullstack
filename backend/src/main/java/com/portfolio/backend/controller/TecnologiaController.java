@@ -15,6 +15,7 @@ import com.portfolio.backend.model.Tecnologia;
 import com.portfolio.backend.service.TecnologiaService;
 
 import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("/api/v1/tecnologias")
 @CrossOrigin(origins = {"http://localhost:5173", "https://portfolio-fullstack-alpha-rouge.vercel.app"})
