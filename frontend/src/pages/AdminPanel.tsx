@@ -48,15 +48,24 @@ export default function AdminPanel() {
   };
 
   // --- HANDLERS ---
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  };
+
   const handleSavePerfil = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/perfil', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(), // <-- ¡Aquí está la magia!
         body: JSON.stringify(perfilData),
       });
       if (response.ok) showMensaje('¡Perfil actualizado con éxito!');
+      else showMensaje('Error de autorización al guardar.');
     } catch (error) {
       console.error(error);
       showMensaje('Error al guardar el perfil.');
@@ -68,7 +77,7 @@ export default function AdminPanel() {
     try {
       const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/experiencias', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(expData),
       });
       if (response.ok) {
@@ -86,7 +95,7 @@ export default function AdminPanel() {
     try {
       const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/estudios', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(estData),
       });
       if (response.ok) {
@@ -102,13 +111,9 @@ export default function AdminPanel() {
   const handleSaveTecnologia = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/tecnologias', {
         method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(techData)
       });
       if (response.ok) {
@@ -124,8 +129,6 @@ export default function AdminPanel() {
 
   const handleSaveProyecto = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Armamos el objeto tal cual lo espera el @ManyToMany de Java
     const payloadProyecto = {
       ...proyData,
       activo: true,
@@ -136,7 +139,7 @@ export default function AdminPanel() {
     try {
       const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/proyectos', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payloadProyecto),
       });
       if (response.ok) {
@@ -153,7 +156,10 @@ export default function AdminPanel() {
   const handleDeleteProyecto = async (id: number) => {
     if (!window.confirm("¿Estás seguro de eliminar este proyecto permanentemente?")) return;
     try {
-      await fetch(`https://portfolio-fullstack-x1xm.onrender.com/api/v1/proyectos/${id}`, { method: 'DELETE' });
+      await fetch(`https://portfolio-fullstack-x1xm.onrender.com/api/v1/proyectos/${id}`, { 
+          method: 'DELETE',
+          headers: getAuthHeaders() // <-- También necesario para eliminar
+      });
       showMensaje('Proyecto eliminado.');
       setProyectosList(proyectosList.filter(p => p.id !== id));
     } catch (error) {
