@@ -17,7 +17,7 @@ import com.portfolio.backend.service.ExperienciaService;
 
 @RestController
 @RequestMapping("/api/v1/experiencias")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://portfolio-fullstack-alpha-rouge.vercel.app"})
 public class ExperienciaController {
 
     @Autowired

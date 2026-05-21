@@ -13,7 +13,7 @@ import com.portfolio.backend.service.PerfilService;
 
 @RestController
 @RequestMapping("/api/v1/perfil")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://portfolio-fullstack-alpha-rouge.vercel.app"})
 public class PerfilController {
 
     @Autowired

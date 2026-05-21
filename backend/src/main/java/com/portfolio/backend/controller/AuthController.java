@@ -13,9 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.portfolio.backend.security.JwtUtil;
 
+
 @RestController
 @RequestMapping("/api/v1/auth")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "https://portfolio-fullstack-alpha-rouge.vercel.app"})
 public class AuthController {
 
     @Autowired
