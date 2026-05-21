@@ -43,7 +43,7 @@ export default function AdminPanel() {
   const handleSavePerfil = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8080/api/v1/perfil', {
+      const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/perfil', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(perfilData),
@@ -60,7 +60,7 @@ export default function AdminPanel() {
   const handleSaveExperiencia = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8080/api/v1/experiencias', {
+      const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/experiencias', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(expData),
@@ -78,7 +78,7 @@ export default function AdminPanel() {
   const handleSaveEstudio = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8080/api/v1/estudios', {
+      const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/estudios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(estData),
@@ -96,7 +96,7 @@ export default function AdminPanel() {
   const handleSaveProyecto = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8080/api/v1/proyectos', {
+      const response = await fetch('https://portfolio-fullstack-x1xm.onrender.com/api/v1/proyectos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...proyData, activo: true, fechaCreacion: new Date().toISOString().split('T')[0] }),
@@ -104,7 +104,7 @@ export default function AdminPanel() {
       if (response.ok) {
         const pCreado = await response.json();
         for (const techId of tecnologiasSeleccionadas) {
-          await fetch(`http://localhost:8080/api/v1/proyectos/${pCreado.id}/tecnologias/${techId}`, { method: 'POST' });
+          await fetch(`https://portfolio-fullstack-x1xm.onrender.com/api/v1/proyectos/${pCreado.id}/tecnologias/${techId}`, { method: 'POST' });
         }
         showMensaje('¡Proyecto publicado!');
         setProyData({ titulo: '', descripcion: '', urlDemo: '', urlRepo: '' });
@@ -120,7 +120,7 @@ export default function AdminPanel() {
     if (!window.confirm("¿Estás seguro de eliminar este proyecto permanentemente?")) return;
     
     try {
-      await api.deleteProyecto(id);
+      await fetch(`https://portfolio-fullstack-x1xm.onrender.com/api/v1/proyectos/${id}`, { method: 'DELETE' });
       showMensaje('Proyecto eliminado.');
       // Actualizamos la lista local para que desaparezca de inmediato sin recargar la página
       setProyectosList(proyectosList.filter(p => p.id !== id));
