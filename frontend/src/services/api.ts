@@ -1,6 +1,6 @@
 import type { Perfil, Proyecto, Estudio, Experiencia } from '../types';
 
-const API_URL = 'https://portfolio-fullstack-x1xm.onrender.com/api';
+const API_URL = 'https://portfolio-fullstack-x1xm.onrender.com/api/v1';
 
 // Función mágica que busca la llave en la memoria del navegador
 const getAuthHeaders = () => {
