@@ -19,7 +19,7 @@ import com.portfolio.backend.service.ProyectoService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/proyectos")
+@RequestMapping("/api/v1/proyectos") // <-- ¡El v1 es vital aquí!
 @CrossOrigin(origins = {"http://localhost:5173", "https://portfolio-fullstack-alpha-rouge.vercel.app"})
 @RequiredArgsConstructor // Inyección por constructor limpia
 public class ProyectoController {
