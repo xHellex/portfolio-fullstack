@@ -7,7 +7,7 @@ const styles = StyleSheet.create({
     padding: '40px 50px',
     fontFamily: 'Helvetica',
     fontSize: 10,
-    color: '#111827', // Gris muy oscuro (casi negro)
+    color: '#111827', 
     lineHeight: 1.5,
   },
   headerContainer: {
@@ -17,11 +17,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     fontSize: 22,
     color: '#000000',
-    marginBottom: 2,
+    lineHeight: 1.2, 
+    marginBottom: 8, 
   },
   subtitle: {
     fontSize: 11,
-    color: '#3b82f6', // Azul profesional
+    color: '#3b82f6',
+    marginTop: 4, 
     marginBottom: 4,
   },
   sectionTitle: {
