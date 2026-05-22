@@ -22,6 +22,15 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'system');
 
+  // 1. PEGA LA FUNCIÓN AQUÍ (Antes del return)
+  const formatearFecha = (fechaCruda: string | undefined | null) => {
+    if (!fechaCruda) return "Presente"; 
+    const fecha = new Date(`${fechaCruda}T00:00:00`); 
+    const opciones: Intl.DateTimeFormatOptions = { month: 'short', year: 'numeric' }; 
+    const fechaFormateada = fecha.toLocaleDateString('es-ES', opciones);
+    return fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1).replace('.', '');
+  };
+
   useEffect(() => {
     // 1. Cargar datos
     Promise.all([api.getProyectos(), api.getEstudios(), api.getExperiencias(), api.getPerfil()])
@@ -156,7 +165,7 @@ export default function Home() {
               <div key={`exp-${exp.id}`} className="relative group">
                 <div className="absolute -left-[35px] md:-left-[51px] top-1 h-5 w-5 rounded-full border-4 border-white dark:border-gray-900 bg-indigo-600 dark:bg-indigo-400 shadow-sm group-hover:scale-125 transition-transform"></div>
                 <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 tracking-wide uppercase">
-                  {exp.fechaInicio} — {exp.actual ? 'Presente' : exp.fechaFin}
+                  {formatearFecha(exp.fechaInicio)} — {exp.actual ? 'Presente' : formatearFecha(exp.fechaFin)}
                 </span>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{exp.cargo} <span className="text-gray-500 dark:text-gray-400 font-medium text-lg">en {exp.empresa}</span></h3>
                 <p className="text-gray-600 dark:text-gray-300 mt-4 leading-relaxed">{exp.descripcion}</p>
@@ -167,7 +176,7 @@ export default function Home() {
               <div key={`est-${est.id}`} className="relative group">
                 <div className="absolute -left-[35px] md:-left-[51px] top-1 h-5 w-5 rounded-full border-4 border-white dark:border-gray-900 bg-blue-500 dark:bg-blue-400 shadow-sm group-hover:scale-125 transition-transform"></div>
                 <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400 tracking-wide uppercase">
-                  {est.fechaInicio} — {est.actual ? 'Presente' : est.fechaFin}
+                  {formatearFecha(est.fechaInicio)} — {est.actual ? 'Presente' : formatearFecha(est.fechaFin)}
                 </span>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{est.titulo} <span className="text-gray-500 dark:text-gray-400 font-medium text-lg">en {est.institucion}</span></h3>
                 <p className="text-gray-600 dark:text-gray-300 mt-4 leading-relaxed">{est.descripcion}</p>
