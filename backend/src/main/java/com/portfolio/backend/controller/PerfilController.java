@@ -1,7 +1,6 @@
 package com.portfolio.backend.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +12,6 @@ import com.portfolio.backend.service.PerfilService;
 
 @RestController
 @RequestMapping("/api/v1/perfil")
-@CrossOrigin(origins = {"http://localhost:5173", "https://portfolio-fullstack-alpha-rouge.vercel.app"})
 public class PerfilController {
 
     @Autowired
