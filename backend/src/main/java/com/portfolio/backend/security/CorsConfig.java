@@ -13,11 +13,11 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // Aplica a todas las rutas (/api/v1/...)
-                        .allowedOriginPatterns("http://localhost:5173", "https://*.vercel.app") // Permite cualquier subdominio de Vercel
+                registry.addMapping("/**") 
+                        .allowedOrigins("*") // <-- El asterisco permite literalmente CUALQUIER dominio
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowedHeaders("*");
+                        // OJO: Borramos la línea .allowCredentials(true) porque choca con el asterisco
             }
         };
     }
